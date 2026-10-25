@@ -1,51 +1,7 @@
-'use client';
-
-import { uid, update } from './store';
-import type { CostItem, Estimate, LineItem } from './types';
-
-export function createEstimate(): string {
-  const id = uid();
-  update((d) => {
-    const e: Estimate = {
-      id,
-      number: d.nextEstimateNumber,
-      title: 'New estimate',
-      customerId: d.customers[0]?.id ?? '',
-      status: 'Draft',
-      date: new Date().toISOString().slice(0, 10),
-      sections: [{ id: uid(), name: 'General', items: [] }],
-      taxRatePct: d.company.defaultTaxRatePct,
-      discount: 0,
-      notes: '',
-      terms: d.company.defaultTerms,
-    };
-    return { ...d, estimates: [e, ...d.estimates], nextEstimateNumber: d.nextEstimateNumber + 1 };
-  });
-  return id;
-}
-
-export function duplicateEstimate(src: Estimate): string {
-  const id = uid();
-  update((d) => ({
-    ...d,
-    estimates: [
-      {
-        ...structuredClone(src),
-        id,
-        number: d.nextEstimateNumber,
-        title: `${src.title} (copy)`,
-        status: 'Draft',
-        date: new Date().toISOString().slice(0, 10),
-      },
-      ...d.estimates,
-    ],
-    nextEstimateNumber: d.nextEstimateNumber + 1,
-  }));
-  return id;
-}
+import type { CostItem, LineItem } from './types';
 
 export const lineFromCostItem = (c: CostItem): LineItem => ({
-  id: uid(),
+  id: crypto.randomUUID(),
   costItemId: c.id,
   name: c.name,
   type: c.type,
@@ -57,7 +13,7 @@ export const lineFromCostItem = (c: CostItem): LineItem => ({
 });
 
 export const blankLine = (): LineItem => ({
-  id: uid(),
+  id: crypto.randomUUID(),
   name: '',
   type: 'Material',
   qty: 1,

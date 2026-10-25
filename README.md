@@ -18,12 +18,24 @@ the Contractor Foreman menu layout.
 - **Dashboard**: open pipeline and approved totals.
 - Every other Contractor Foreman module is in the menu as a placeholder.
 
-Data is stored in the browser (localStorage) for now, so each device has its
-own copy. See ROADMAP.md for the move to Supabase.
+Data lives in Supabase (Postgres) behind email/password login, scoped per
+company with row-level security, so it syncs across every device. On signup,
+each account is auto-provisioned with its own company and a starter price book.
 
 ## Run it
 
 ```bash
 npm install
-npm run dev   # http://localhost:3000
+cp .env.example .env.local   # Supabase URL + publishable key
+npm run dev                  # http://localhost:3000
 ```
+
+## Backend
+
+- **Supabase project:** `Estimator` (`wbzajzeqzlxgcqbcihxt`)
+- **Auth:** email + password. New projects validate email deliverability, so
+  sign up with a real address. By default Supabase emails a confirmation link;
+  turn off *Authentication → Providers → Email → Confirm email* in the Supabase
+  dashboard if you want instant sign-in without the email step.
+- **Tables:** `companies`, `memberships`, `customers`, `cost_items`, `estimates`
+  (sections/line-items stored as JSON on the estimate). All RLS-protected.

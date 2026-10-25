@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createEstimate } from '@/lib/estimates';
 import { totals, money } from '@/lib/calc';
-import { useDB } from '@/lib/store';
+import { createEstimate, useStore } from '@/lib/store';
 
 export default function Dashboard() {
-  const db = useDB();
+  const db = useStore();
   const router = useRouter();
   const name = (id: string) => db.customers.find((c) => c.id === id)?.name ?? '—';
   const approved = db.estimates.filter((e) => e.status === 'Approved');
@@ -28,11 +27,16 @@ export default function Dashboard() {
     </div>
   );
 
+  const onNew = async () => {
+    const id = await createEstimate();
+    if (id) router.push(`/estimates/${id}`);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <button className="btn" onClick={() => router.push(`/estimates/${createEstimate()}`)}>+ New Estimate</button>
+        <button className="btn" onClick={onNew}>+ New Estimate</button>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="card"><div className="label">Open pipeline</div><div className="text-2xl font-bold tabular-nums">{money(pipeline)}</div></div>

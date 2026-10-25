@@ -5,14 +5,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Copy, FileText, Plus, Trash2 } from 'lucide-react';
 import { linePrice, money, sectionPrice, totals } from '@/lib/calc';
-import { blankLine, duplicateEstimate, lineFromCostItem } from '@/lib/estimates';
-import { uid, update, useDB } from '@/lib/store';
+import { blankLine, lineFromCostItem } from '@/lib/estimates';
+import { deleteEstimate, duplicateEstimate, patchEstimate, useStore } from '@/lib/store';
 import { ESTIMATE_STATUSES, ITEM_TYPES, type Estimate, type LineItem, type Section } from '@/lib/types';
 
 export default function EstimateEditor() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const db = useDB();
+  const db = useStore();
   const est = db.estimates.find((e) => e.id === id);
   const [picker, setPicker] = useState<string | null>(null); // section id
 
@@ -24,11 +24,10 @@ export default function EstimateEditor() {
     );
   }
 
-  const save = (fn: (e: Estimate) => Estimate) =>
-    update((d) => ({ ...d, estimates: d.estimates.map((e) => (e.id === id ? fn(e) : e)) }));
-  const set = (patch: Partial<Estimate>) => save((e) => ({ ...e, ...patch }));
+  const set = (patch: Partial<Estimate>) => patchEstimate(id, patch);
+  const setSections = (fn: (s: Section[]) => Section[]) => set({ sections: fn(est.sections) });
   const setSection = (sid: string, fn: (s: Section) => Section) =>
-    save((e) => ({ ...e, sections: e.sections.map((s) => (s.id === sid ? fn(s) : s)) }));
+    setSections((secs) => secs.map((s) => (s.id === sid ? fn(s) : s)));
   const setLine = (sid: string, lid: string, patch: Partial<LineItem>) =>
     setSection(sid, (s) => ({ ...s, items: s.items.map((i) => (i.id === lid ? { ...i, ...patch } : i)) }));
 
@@ -40,12 +39,17 @@ export default function EstimateEditor() {
         <h1 className="text-2xl font-bold">Estimate #{est.number}</h1>
         <div className="flex flex-wrap gap-2">
           <Link href={`/estimates/${id}/print`} className="btn"><FileText size={16} /> Proposal</Link>
-          <button className="btn-ghost" onClick={() => router.push(`/estimates/${duplicateEstimate(est)}`)}><Copy size={16} /> Duplicate</button>
+          <button
+            className="btn-ghost"
+            onClick={async () => { const nid = await duplicateEstimate(est); if (nid) router.push(`/estimates/${nid}`); }}
+          >
+            <Copy size={16} /> Duplicate
+          </button>
           <button
             className="btn-ghost text-red-600"
             onClick={() => {
               if (!confirm('Delete this estimate?')) return;
-              update((d) => ({ ...d, estimates: d.estimates.filter((e) => e.id !== id) }));
+              deleteEstimate(id);
               router.push('/estimates');
             }}
           >
@@ -62,6 +66,7 @@ export default function EstimateEditor() {
         <div>
           <label className="label">Customer</label>
           <select className="input" value={est.customerId} onChange={(e) => set({ customerId: e.target.value })}>
+            <option value="">— none —</option>
             {db.customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
           <Link href="/directory" className="text-xs text-navy underline">Manage customers</Link>
@@ -100,7 +105,7 @@ export default function EstimateEditor() {
               aria-label="Delete section"
               onClick={() =>
                 (s.items.length === 0 || confirm(`Delete section "${s.name}"?`)) &&
-                save((e) => ({ ...e, sections: e.sections.filter((x) => x.id !== s.id) }))
+                setSections((secs) => secs.filter((x) => x.id !== s.id))
               }
             >
               <Trash2 size={16} />
@@ -155,7 +160,7 @@ export default function EstimateEditor() {
 
       <button
         className="btn-ghost"
-        onClick={() => save((e) => ({ ...e, sections: [...e.sections, { id: uid(), name: 'New section', items: [] }] }))}
+        onClick={() => setSections((secs) => [...secs, { id: crypto.randomUUID(), name: 'New section', items: [] }])}
       >
         <Plus size={16} /> Add section (e.g. Kitchen, Bath, Demo)
       </button>
@@ -209,7 +214,7 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
 }
 
 function CostItemPicker({ onClose, onPick }: { onClose: () => void; onPick: (ids: string[]) => void }) {
-  const { costItems } = useDB();
+  const { costItems } = useStore();
   const [q, setQ] = useState('');
   const [sel, setSel] = useState<string[]>([]);
   const shown = costItems

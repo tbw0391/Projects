@@ -6,7 +6,7 @@ then field ops.
 ## Phase 1: Estimating (done)
 Estimates, cost items database, customers, printable proposal, company settings.
 
-## Phase 2: Backend and accounts
+## Phase 2: Backend and accounts (done)
 - Supabase: Postgres tables for company, customers, cost_items, estimates
   (sections and items as JSONB or child tables), with row-level security per company.
 - Auth (email magic link), user roles (owner, estimator, field crew).

@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { linePrice, money, sectionPrice, totals } from '@/lib/calc';
-import { useDB } from '@/lib/store';
+import { useStore } from '@/lib/store';
 
 // Customer-facing proposal. Shows prices only — never cost or markup.
 export default function Proposal() {
   const { id } = useParams<{ id: string }>();
-  const db = useDB();
+  const db = useStore();
   const est = db.estimates.find((e) => e.id === id);
   if (!est) return <div className="card">Estimate not found.</div>;
 

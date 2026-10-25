@@ -4,16 +4,21 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { money, totals } from '@/lib/calc';
-import { createEstimate, STATUS_COLORS } from '@/lib/estimates';
-import { useDB } from '@/lib/store';
+import { STATUS_COLORS } from '@/lib/estimates';
+import { createEstimate, useStore } from '@/lib/store';
 import { ESTIMATE_STATUSES } from '@/lib/types';
 
 export default function Estimates() {
-  const db = useDB();
+  const db = useStore();
   const router = useRouter();
   const [status, setStatus] = useState('All');
   const name = (id: string) => db.customers.find((c) => c.id === id)?.name ?? '—';
   const shown = db.estimates.filter((e) => status === 'All' || e.status === status);
+
+  const onNew = async () => {
+    const id = await createEstimate();
+    if (id) router.push(`/estimates/${id}`);
+  };
 
   return (
     <div className="space-y-4">
@@ -23,7 +28,7 @@ export default function Estimates() {
           <select className="input w-32" value={status} onChange={(e) => setStatus(e.target.value)}>
             {['All', ...ESTIMATE_STATUSES].map((s) => <option key={s}>{s}</option>)}
           </select>
-          <button className="btn" onClick={() => router.push(`/estimates/${createEstimate()}`)}>+ New</button>
+          <button className="btn" onClick={onNew}>+ New</button>
         </div>
       </div>
       <div className="card overflow-x-auto p-0">

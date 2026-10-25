@@ -1,15 +1,14 @@
 'use client';
 
-import { resetDB, update, useDB } from '@/lib/store';
+import { patchCompany, useStore } from '@/lib/store';
 import type { Company } from '@/lib/types';
 
 export default function Settings() {
-  const { company } = useDB();
-  const set = (patch: Partial<Company>) => update((d) => ({ ...d, company: { ...d.company, ...patch } }));
+  const { company } = useStore();
   const text = (f: 'name' | 'phone' | 'email' | 'address' | 'license', label: string) => (
     <div>
       <label className="label">{label}</label>
-      <input className="input" value={company[f]} onChange={(e) => set({ [f]: e.target.value })} />
+      <input className="input" value={company[f]} onChange={(e) => patchCompany({ [f]: e.target.value } as Partial<Company>)} />
     </div>
   );
 
@@ -24,19 +23,14 @@ export default function Settings() {
         <div className="md:col-span-2">{text('address', 'Address')}</div>
         <div>
           <label className="label">Default tax rate %</label>
-          <input className="input" type="number" step="0.01" value={company.defaultTaxRatePct} onChange={(e) => set({ defaultTaxRatePct: +e.target.value })} />
+          <input className="input" type="number" step="0.01" value={company.defaultTaxRatePct} onChange={(e) => patchCompany({ defaultTaxRatePct: +e.target.value })} />
         </div>
         <div className="md:col-span-2">
           <label className="label">Default terms</label>
-          <textarea className="input h-24" value={company.defaultTerms} onChange={(e) => set({ defaultTerms: e.target.value })} />
+          <textarea className="input h-24" value={company.defaultTerms} onChange={(e) => patchCompany({ defaultTerms: e.target.value })} />
         </div>
       </div>
-      <button
-        className="btn-ghost text-red-600"
-        onClick={() => confirm('Wipe all data and reload the starter price book?') && resetDB()}
-      >
-        Reset all data
-      </button>
+      <p className="text-xs text-slate-400">Changes save automatically.</p>
     </div>
   );
 }
